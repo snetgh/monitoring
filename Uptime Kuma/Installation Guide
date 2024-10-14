@@ -1,0 +1,41 @@
+Uptime Kuma is an open source monitoring tool. It enables you to monitor services over HTTP/S, TCP, DNS, and other protocols. You can receive notification alerts of downtime and even create custom status pages for your users.
+
+root@snet[~]# sudo curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+
+root@snet[~]# sudo apt-get install -y nodejs
+
+root@snet[~]# sudo apt install git
+
+root@snet[~]# sudo git clone https://github.com/louislam/uptime-kuma.git
+
+root@snet[~]# cd uptime-kuma
+
+root@snet[~]# sudo npm run setup
+
+root@snet[~]# sudo npm install pm2 -g && pm2 install pm2-logrotate
+
+root@snet[~]# sudo pm2 start server/server.js --name uptime-kuma
+
+root@snet[~]# sudo pm2 startup
+The above command checks the type of init system and provides you a command to create the pm2 service unit. Copy the script command given by the PM2 and run it on your system.
+Setup Proxy server
+root@snet[~]# sudo a2enmod ssl proxy proxy_ajp proxy_wstunnel proxy_http rewrite deflate headers proxy_balancer proxy_connect proxy_html
+
+root@snet[~]# sudo systemctl restart apache2
+
+root@snet[~]# sudo nano /etc/apache2/sites-available/kuma.conf
+
+Paste the following lines:
+
+<VirtualHost *:80>
+  ServerName uptime.snetgh.net
+  ProxyPass / http://localhost:3001/
+  RewriteEngine on
+  RewriteCond %{HTTP:Upgrade} websocket [NC]
+  RewriteCond %{HTTP:Connection} upgrade [NC]
+  RewriteRule ^/?(.*) "ws://localhost:3001/$1" [P,L]
+</VirtualHost>
+
+root@snet[~]# sudo a2ensite kuma.conf
+
+root@snet[~]# sudo systemctl restart apache2
